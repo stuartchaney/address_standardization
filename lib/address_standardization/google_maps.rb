@@ -7,6 +7,7 @@ module AddressStandardization
     
     protected
       # much of this code was borrowed from GeoKit, thanks...
+
       def get_live_response(address_info)
         raise "API key not specified.\nCall AddressStandardization::GoogleMaps.api_key = '...' before you call .standardize()." unless GoogleMaps.api_key
         
@@ -35,7 +36,15 @@ module AddressStandardization
         
         addr = {}
         
-        addr[:street]   = get_inner_text(xml, '//ThoroughfareName').to_s
+        full_street = get_inner_text(xml, '//ThoroughfareName').to_s
+        if full_street.include?("#")
+          addr2 = "##{full_street.split('#').last}"
+        else
+          addr2 = nil
+        end
+
+        addr[:street]   = full_street.split('#').first
+        addr[:addr2]    = addr2
         addr[:city]     = get_inner_text(xml, '//LocalityName').to_s
         addr[:province] = addr[:state] = get_inner_text(xml, '//AdministrativeAreaName').to_s
         addr[:zip]      = addr[:postalcode] = get_inner_text(xml, '//PostalCodeNumber').to_s

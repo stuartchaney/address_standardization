@@ -7,7 +7,7 @@ module AddressStandardization
     class << self
       attr_accessor :valid_keys
     end
-    self.valid_keys = %w(street city state province zip postalcode country)
+    self.valid_keys = %w(street addr2 city state province zip postalcode country)
     
     attr_reader :address_info
   
