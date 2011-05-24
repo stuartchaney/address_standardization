@@ -19,7 +19,14 @@ module AddressStandardization
           (address_info["state"] || address_info["province"]),
           address_info["zip"]
         ].compact.join(" ")
+
+ 				# Check if address contains a unit indicator #,apt,unit
+        if %w(#).any? {|str| address_str.downcase.include? str}
+          address_str.gsub!("#", "UNIT ") #UNIT WILL ALWAYS TURN INTO "#" IN GOOGLE MAPS
+        end
+
         url = "http://maps.google.com/maps/geo?q=#{address_str.url_escape}&output=xml&key=#{GoogleMaps.api_key}&oe=utf-8"
+
         AddressStandardization.debug "[GoogleMaps] Hitting URL: #{url}"
         uri = URI.parse(url)
         res = Net::HTTP.get_response(uri)
