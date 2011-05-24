@@ -1,5 +1,6 @@
 module AddressStandardization
   # See <http://code.google.com/apis/maps/documentation/geocoding/>
+	# Lets put addr2 in here
   class GoogleMaps < AbstractService
     class << self
       attr_accessor :api_key
