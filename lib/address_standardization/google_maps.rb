@@ -9,7 +9,7 @@ module AddressStandardization
       # much of this code was borrowed from GeoKit, thanks...
 
       def get_live_response(address_info)
-        raise "API key not specified.\nCall AddressStandardization::GoogleMaps.api_key = '...' before you call .standardize()." unless GoogleMaps.api_key
+        #raise "API key not specified.\nCall AddressStandardization::GoogleMaps.api_key = '...' before you call .standardize()." unless GoogleMaps.api_key
         
         address_info = address_info.stringify_keys
         
@@ -25,7 +25,7 @@ module AddressStandardization
           address_str.gsub!("#", "UNIT ") #UNIT WILL ALWAYS TURN INTO "#" IN GOOGLE MAPS
         end
 
-        url = "http://maps.google.com/maps/geo?q=#{address_str.url_escape}&output=xml&key=#{GoogleMaps.api_key}&oe=utf-8"
+        url = "http://maps.google.com/maps/geo?q=#{address_str.url_escape}&output=xml&oe=utf-8"
 
         AddressStandardization.debug "[GoogleMaps] Hitting URL: #{url}"
         uri = URI.parse(url)
