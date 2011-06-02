@@ -5,6 +5,7 @@ module AddressStandardization
     class << self
       attr_accessor :api_key
       attr_accessor :proxy
+      attr_accessor :proxy_error_callback
     
     protected
       # much of this code was borrowed from GeoKit, thanks...
@@ -33,8 +34,33 @@ module AddressStandardization
         
         # Proxy given? Use it.
         if proxy
-          proxy_host, proxy_port = (proxy.kind_of?(Proc) ? proxy.call : proxy).split(':')
-          res = Net::HTTP::Proxy(proxy_host, proxy_port).get_response(uri)
+          # cycle through our proxy list randomly
+          while true
+            # our proxy list may be empty.. break the loop returning nil
+            unless proxy_url = (proxy.kind_of?(Proc) ? proxy.call : proxy)
+              res = nil
+              break
+            end
+
+            AddressStandardization.debug "[GoogleMaps] Using proxy: #{proxy_url}"
+              
+            # try to request uri via proxy
+            bm = Benchmark.measure do
+              proxy_host, proxy_port = proxy_url.split(':')
+              http_proxy = Net::HTTP::Proxy(proxy_host, proxy_port)
+              res = http_proxy.get_response(uri) rescue nil
+            end
+
+            AddressStandardization.debug "--------------------------------------------------"
+            AddressStandardization.debug "Time ellapsed: #{bm.to_s}"
+            AddressStandardization.debug "--------------------------------------------------"
+            
+            # break the loop if we got a successful response
+            break if res.is_a?(Net::HTTPSuccess)
+
+            # report bad proxy and try again...
+            proxy_error_callback.call(proxy) if proxy_error_callback
+          end
         # Direct request
         else
           res = Net::HTTP.get_response(uri)
