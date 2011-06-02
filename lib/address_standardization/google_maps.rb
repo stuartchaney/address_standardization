@@ -36,9 +36,9 @@ module AddressStandardization
         if proxy
           # cycle through our proxy list randomly
           while true
-            # our proxy list may be empty.. break the loop returning nil
+            # our proxy list may be empty.. break the loop and try a regular get
             unless proxy_url = (proxy.kind_of?(Proc) ? proxy.call : proxy)
-              res = nil
+              res = Net::HTTP.get_response(uri)
               break
             end
 
