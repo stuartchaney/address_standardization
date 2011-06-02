@@ -4,6 +4,7 @@ module AddressStandardization
   class GoogleMaps < AbstractService
     class << self
       attr_accessor :api_key
+      attr_accessor :proxy
     
     protected
       # much of this code was borrowed from GeoKit, thanks...
@@ -29,7 +30,16 @@ module AddressStandardization
 
         AddressStandardization.debug "[GoogleMaps] Hitting URL: #{url}"
         uri = URI.parse(url)
-        res = Net::HTTP.get_response(uri)
+        
+        # Proxy given? Use it.
+        if proxy
+          proxy_host, proxy_port = (proxy.kind_of?(Proc) ? proxy.call : proxy).split(':')
+          res = Net::HTTP::Proxy(proxy_host, proxy_port).get_response(uri)
+        # Direct request
+        else
+          res = Net::HTTP.get_response(uri)
+        end
+
         return unless res.is_a?(Net::HTTPSuccess)
         
         content = res.body
