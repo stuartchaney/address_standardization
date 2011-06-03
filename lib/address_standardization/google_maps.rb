@@ -50,7 +50,21 @@ module AddressStandardization
             bm = Benchmark.measure do
               proxy_host, proxy_port = proxy_url.split(':')
               http_proxy = Net::HTTP::Proxy(proxy_host, proxy_port)
-              res = http_proxy.get_response(uri) rescue nil
+              
+              res = nil
+              start_time = Time.now
+              proxy_thread = Thread.new do
+                res = http_proxy.get_response(uri) rescue nil
+              end
+              
+              # Wait for response for a maximum of 2 secs
+              while Time.now < (start_time + proxy_max_request_time)
+                break unless proxy_thread.alive?
+                sleep 0.1
+              end
+
+              # Kill the proxy thread, if still running since it is no longer useful for us after this point
+              proxy_thread.kill if proxy_thread.alive?
             end
 
             AddressStandardization.debug "--------------------------------------------------"
@@ -62,7 +76,8 @@ module AddressStandardization
               slow_proxy_callback.call(proxy) if slow_proxy_callback
             end
             
-            # break the loop if we got a successful response
+            AddressStandardization.debug "Response type was: #{res.class.to_s}"
+            # break the loop if we got a successful response          
             break if res.is_a?(Net::HTTPSuccess)
 
             # report bad proxy and try again...
