@@ -36,10 +36,11 @@ module AddressStandardization
         
         # Proxy given? Use it.
         if proxy
-          # cycle through our proxy list randomly
+          # Cycle through our proxy list
           while true
             # our proxy list may be empty.. break the loop and try a regular get
             unless proxy_url = (proxy.kind_of?(Proc) ? proxy.call : proxy)
+              AddressStandardization.debug "[GoogleMaps] Proxy list appears to be empty -- bypassing proxy."
               res = Net::HTTP.get_response(uri)
               break
             end
@@ -57,7 +58,7 @@ module AddressStandardization
                 res = http_proxy.get_response(uri) rescue nil
               end
               
-              # Wait for response for a maximum of 2 secs
+              # Wait for response for a maximum of `proxy_max_request_time` secs
               while Time.now < (start_time + proxy_max_request_time)
                 break unless proxy_thread.alive?
                 sleep 0.1
