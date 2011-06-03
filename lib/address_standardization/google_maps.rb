@@ -6,6 +6,8 @@ module AddressStandardization
       attr_accessor :api_key
       attr_accessor :proxy
       attr_accessor :proxy_error_callback
+      attr_accessor :proxy_max_request_time
+      attr_accessor :slow_proxy_callback
     
     protected
       # much of this code was borrowed from GeoKit, thanks...
@@ -54,6 +56,11 @@ module AddressStandardization
             AddressStandardization.debug "--------------------------------------------------"
             AddressStandardization.debug "Time ellapsed: #{bm.to_s}"
             AddressStandardization.debug "--------------------------------------------------"
+            
+            if proxy_max_request_time && bm.real > proxy_max_request_time
+              AddressStandardization.debug "WARNING: Slow proxy"
+              slow_proxy_callback.call(proxy) if slow_proxy_callback
+            end
             
             # break the loop if we got a successful response
             break if res.is_a?(Net::HTTPSuccess)
