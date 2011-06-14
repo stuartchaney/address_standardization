@@ -5,6 +5,7 @@ module AddressStandardization
     class << self
       attr_accessor :api_key
       attr_accessor :proxy
+      attr_accessor :proxy_auth
       attr_accessor :proxy_error_callback
       attr_accessor :proxy_max_request_time
       attr_accessor :slow_proxy_callback
@@ -33,6 +34,13 @@ module AddressStandardization
 
         AddressStandardization.debug "[GoogleMaps] Hitting URL: #{url}"
         uri = URI.parse(url)
+
+        # Proxy auth required?
+        proxy_user, proxy_pass = nil, nil        
+
+        if proxy_auth
+          proxy_user, proxy_pass = proxy_auth[0], proxy_auth[1]
+        end
         
         # Proxy given? Use it.
         if proxy
@@ -50,7 +58,7 @@ module AddressStandardization
             # try to request uri via proxy
             bm = Benchmark.measure do
               proxy_host, proxy_port = proxy_url.split(':')
-              http_proxy = Net::HTTP::Proxy(proxy_host, proxy_port)
+              http_proxy = Net::HTTP::Proxy(proxy_host, proxy_port, proxy_user, proxy_pass)
               
               res = nil
               start_time = Time.now
