@@ -4,12 +4,13 @@ module AddressStandardization
   class GoogleMaps < AbstractService
     class << self
       attr_accessor :api_key
+      attr_accessor :proxy
     
     protected
       # much of this code was borrowed from GeoKit, thanks...
 
       def get_live_response(address_info)
-        raise "API key not specified.\nCall AddressStandardization::GoogleMaps.api_key = '...' before you call .standardize()." unless GoogleMaps.api_key
+        #raise "API key not specified.\nCall AddressStandardization::GoogleMaps.api_key = '...' before you call .standardize()." unless GoogleMaps.api_key
         
         address_info = address_info.stringify_keys
         
@@ -19,10 +20,26 @@ module AddressStandardization
           (address_info["state"] || address_info["province"]),
           address_info["zip"]
         ].compact.join(" ")
-        url = "http://maps.google.com/maps/geo?q=#{address_str.url_escape}&output=xml&key=#{GoogleMaps.api_key}&oe=utf-8"
+
+ 				# Check if address contains a unit indicator #,apt,unit
+        if %w(#).any? {|str| address_str.downcase.include? str}
+          address_str.gsub!("#", "UNIT ") #UNIT WILL ALWAYS TURN INTO "#" IN GOOGLE MAPS
+        end
+
+        url = "http://maps.google.com/maps/geo?q=#{address_str.url_escape}&output=xml&oe=utf-8"
+
         AddressStandardization.debug "[GoogleMaps] Hitting URL: #{url}"
         uri = URI.parse(url)
-        res = Net::HTTP.get_response(uri)
+        
+        # Proxy given? Use it.
+        if proxy
+          proxy_host, proxy_port = (proxy.kind_of?(Proc) ? proxy.call : proxy).split(':')
+          res = Net::HTTP::Proxy(proxy_host, proxy_port).get_response(uri)
+        # Direct request
+        else
+          res = Net::HTTP.get_response(uri)
+        end
+
         return unless res.is_a?(Net::HTTPSuccess)
         
         content = res.body
